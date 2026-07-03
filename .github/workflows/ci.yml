@@ -78,3 +78,53 @@ jobs:
             -destination 'platform=macOS' \
             -skip-testing:MarkdownTests/RenderBenchmarkTests \
             CODE_SIGNING_ALLOWED=NO
+
+      # Produce a downloadable build on every run so the app can be tested
+      # without a local Mac. The runner has no Developer ID certificate, so the
+      # app is ad-hoc signed ("-"): it launches locally (after clearing the
+      # quarantine flag) but is NOT notarized for distribution.
+      - name: Build Release app (ad-hoc signed)
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project FluxMarkdown.xcodeproj \
+            -scheme Markdown \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            DEVELOPMENT_TEAM=""
+          APP="build/DerivedData/Build/Products/Release/FluxMarkdown.app"
+          test -d "$APP" || { echo "::error::FluxMarkdown.app not found at $APP"; exit 1; }
+          echo "APP_PATH=$APP" >> "$GITHUB_ENV"
+
+      - name: Package .app zip and .dmg
+        run: |
+          set -euo pipefail
+          VERSION="$(cat .version)"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          mkdir -p build/out
+          # ditto preserves the bundle's internal symlinks (e.g. Sparkle.framework)
+          # that a plain zip would mangle.
+          ditto -c -k --keepParent "$APP_PATH" "build/out/FluxMarkdown-${VERSION}.app.zip"
+          # Simple drag-to-install DMG via hdiutil — no create-dmg or signing deps.
+          STAGING="$(mktemp -d)"
+          cp -R "$APP_PATH" "$STAGING/"
+          ln -s /Applications "$STAGING/Applications"
+          hdiutil create -volname "FluxMarkdown" \
+            -srcfolder "$STAGING" -ov -format UDZO \
+            "build/out/FluxMarkdown-${VERSION}.dmg"
+          rm -rf "$STAGING"
+          ls -lh build/out
+
+      - name: Upload app + DMG artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: FluxMarkdown-${{ env.VERSION }}
+          path: |
+            build/out/FluxMarkdown-${{ env.VERSION }}.app.zip
+            build/out/FluxMarkdown-${{ env.VERSION }}.dmg
+          if-no-files-found: error
+          retention-days: 14
