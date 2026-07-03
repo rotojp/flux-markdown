@@ -29,6 +29,9 @@ This repository uses topic-based documentation under `docs/`.
 ## Design
 - Host app browser design: [`design/DESIGN_HOST_APP_BROWSER.md`](design/DESIGN_HOST_APP_BROWSER.md)
 
+## Security
+- Untrusted Markdown hardening (sanitization, CSP, file-URL access): [`security/SECURITY_HARDENING.md`](security/SECURITY_HARDENING.md)
+
 ## Debug
 - Debug docs: [`debug/`](debug/)
 - Quick index: [`debug/README.md`](debug/README.md)

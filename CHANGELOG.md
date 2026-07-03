@@ -1,5 +1,11 @@
 ## [Unreleased]
-_无待发布的变更_
+
+### Security
+- **Untrusted Markdown rendering hardening**: Closed a local file disclosure/exfiltration path where a malicious Markdown file previewed in Finder could run JavaScript in the renderer WebView and read local files.
+  - Rendered HTML is now sanitized with DOMPurify before it reaches the DOM, stripping `<script>`, inline event handlers (e.g. `<img onerror>`), `javascript:` URLs and framing elements while preserving tables, task lists, code, KaTeX/MathML, SVG and `local-md://` / `data:` images.
+  - Removed the unnecessary `allowUniversalAccessFromFileURLs` WebKit setting from the QuickLook extension, standalone app, and CLI exporter; local resources already load through contained custom scheme handlers.
+  - Added a Content-Security-Policy to the renderer (no inline scripts, `connect-src 'self'`, `object-src`/`frame-src 'none'`) as defense in depth.
+  - See [`docs/security/SECURITY_HARDENING.md`](docs/security/SECURITY_HARDENING.md).
 
 ## [1.34.449] - 2026-06-29
 

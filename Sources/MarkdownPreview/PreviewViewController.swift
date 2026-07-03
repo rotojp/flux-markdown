@@ -337,8 +337,12 @@ public class PreviewViewController: NSViewController, QLPreviewingController, WK
             webConfiguration.defaultWebpagePreferences = pagePreferences
         }
         
-        webConfiguration.setValue(true, forKey: "allowUniversalAccessFromFileURLs")
-        
+        // SECURITY: Do NOT enable `allowUniversalAccessFromFileURLs`. The renderer is
+        // loaded via the flux-renderer:// custom scheme and local images via local-md://,
+        // neither of which needs it. Enabling it would let script in an untrusted markdown
+        // file make cross-origin reads of arbitrary file:// URLs and exfiltrate them.
+        // WKWebView defaults this to false; we intentionally keep the secure default.
+
         let userContentController = WKUserContentController()
         userContentController.add(self, name: "logger")
         userContentController.add(self, name: "linkClicked")

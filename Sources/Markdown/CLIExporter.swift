@@ -77,7 +77,10 @@ final class CLIExporter: NSObject {
             rendererBundleSchemeHandler = rendererHandler
         }
 
-        config.setValue(true, forKey: "allowUniversalAccessFromFileURLs")
+        // SECURITY: Do NOT enable `allowUniversalAccessFromFileURLs`. The renderer loads via
+        // the flux-renderer:// custom scheme and local images via local-md://, so it is not
+        // needed. Enabling it would let script in an untrusted markdown file read and
+        // exfiltrate arbitrary local file:// URLs. Keep WKWebView's secure default (false).
 
         // A4 width in points; height is a reasonable viewport for rendering
         let renderWidth: CGFloat  = 595.28

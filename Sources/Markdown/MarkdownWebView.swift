@@ -73,8 +73,10 @@ struct MarkdownWebView: NSViewRepresentable {
             os_log("Failed to find renderer index.html in bundle", log: coordinator.logger, type: .error)
         }
 
-        webConfiguration.setValue(true, forKey: "allowUniversalAccessFromFileURLs")
-
+        // SECURITY: Do NOT enable `allowUniversalAccessFromFileURLs`. The renderer loads via
+        // the flux-renderer:// custom scheme and local images via local-md://, so it is not
+        // needed. Enabling it would let script in an untrusted markdown file read and
+        // exfiltrate arbitrary local file:// URLs. Keep WKWebView's secure default (false).
 
         #if DEBUG
         webConfiguration.preferences.setValue(true, forKey: "developerExtrasEnabled")

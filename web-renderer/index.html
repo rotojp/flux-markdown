@@ -2,6 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!--
+      SECURITY: Content Security Policy (defense-in-depth alongside DOMPurify sanitization).
+      The renderer bundle (JS/CSS/WASM/fonts) is served from the flux-renderer:// origin, so
+      'self' covers it. Notes:
+        - script-src omits 'unsafe-inline', so inline event handlers (<img onerror>) can't run.
+          'unsafe-eval'/'wasm-unsafe-eval' are required by Vega and the Typst/Graphviz WASM.
+        - connect-src is limited to 'self' so a compromised page can't exfiltrate over the
+          network (the sandbox otherwise grants com.apple.security.network.client).
+        - img-src allows local-md:// (sandboxed local images), data: and remote images.
+        - object-src/frame-src are 'none'; forms can't submit.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: local-md: https: http:; media-src 'self' data: blob: local-md: https: http:; font-src 'self' data:; connect-src 'self' blob: data:; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; frame-src 'none'; form-action 'none'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Markdown Preview</title>
     <style>
