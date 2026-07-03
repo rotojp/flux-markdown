@@ -21,6 +21,7 @@ This repository uses topic-based documentation under `docs/`.
 - Architecture: [`dev/ARCHITECTURE.md`](dev/ARCHITECTURE.md)
 - Development guide: [`dev/DEVELOPMENT.md`](dev/DEVELOPMENT.md)
 - Renderer roadmap: [`dev/renderer/RENDERER_MARKDOWN_IT_PLUGIN_ROADMAP.md`](dev/renderer/RENDERER_MARKDOWN_IT_PLUGIN_ROADMAP.md)
+- Local MacPorts build: [`dev/MACPORTS_LOCAL_BUILD.md`](dev/MACPORTS_LOCAL_BUILD.md)
 
 ## Release
 - Release process: [`release/RELEASE_PROCESS.md`](release/RELEASE_PROCESS.md)
