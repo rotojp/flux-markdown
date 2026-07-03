@@ -58,6 +58,31 @@ function escapeHtml(text: string): string {
     return text.replace(/[&<>"']/g, (char) => map[char]);
 }
 
+// DOMPurify's safe defaults plus the `local-md:` custom scheme, which the image
+// renderer rewrites relative/local image paths to for sandboxed loading. Everything
+// else outside the default allow-list (javascript:, vbscript:, unknown schemes) is
+// stripped. `data:` URIs on media elements are handled by DOMPurify's own logic.
+const ALLOWED_URI_REGEXP =
+    /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|local-md):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i;
+
+/**
+ * Sanitize renderer-produced HTML before it is inserted into the live DOM.
+ *
+ * Markdown is untrusted input and the renderer runs with `html: true`, so raw HTML
+ * — including `<script>` and inline event handlers such as `<img src=x onerror=...>` —
+ * can flow straight through to the output. Injecting that via innerHTML would execute
+ * attacker-controlled JavaScript when a file is previewed (e.g. by pressing Space in
+ * Finder). DOMPurify strips scripts, event-handler attributes and dangerous URI
+ * schemes while preserving the markup the renderer relies on: tables, task lists,
+ * code blocks, KaTeX/MathML, inline SVG, footnotes and local-md:// / data: images.
+ */
+export function sanitizeRenderedHtml(html: string): string {
+    return DOMPurify.sanitize(html, {
+        ALLOWED_URI_REGEXP,
+        ADD_ATTR: ['target'],
+    });
+}
+
 function logToSwift(message: string) {
     try {
         // @ts-ignore
@@ -95,6 +120,7 @@ import './styles/finder-pane.css';
 import './styles/typst.css';
 
 import MarkdownIt from 'markdown-it';
+import DOMPurify from 'dompurify';
 import hljs from 'highlight.js/lib/core';
 import * as jsyaml from 'js-yaml';
 
@@ -787,8 +813,11 @@ window.renderMarkdown = async function (text: string, options: RenderOptions = {
 
         let html = md.render(renderBody, { baseUrl: options.baseUrl, imageData: options.imageData, renderVersion: options.renderVersion });
 
+        // SECURITY: sanitize untrusted markdown-derived HTML before it touches the DOM.
+        // This must run before `tempDiv.innerHTML` is set — even on a detached element,
+        // assigning innerHTML fires <img onerror>/<iframe> loads that could execute script.
         const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = frontMatterHtml + html;
+        tempDiv.innerHTML = sanitizeRenderedHtml(frontMatterHtml + html);
 
         const enableMermaid = options.enableMermaid !== false;
         const mermaidBlocks = enableMermaid
